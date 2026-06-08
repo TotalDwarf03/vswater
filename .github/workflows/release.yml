@@ -23,6 +23,14 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Validate Version
+        run: |
+          PACKAGE_VERSION=$(jq -r .version package.json)
+          if [ "v$PACKAGE_VERSION" != "${{ github.ref_name }}" ]; then
+            echo "Error: package.json version ($PACKAGE_VERSION) does not match the Git tag (${{ github.ref_name }})."
+            exit 1
+          fi
+
       - name: Install vsce
         run: npm install -g @vscode/vsce
 
