@@ -32,6 +32,24 @@
         "title": "vswater: Reset Daily Intake"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vswater-explorer",
+          "title": "vswater",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "vswater-explorer": [
+        {
+          "type": "webview",
+          "id": "vswater.dashboard",
+          "name": "Hydration Dashboard"
+        }
+      ]
+    },
     "configuration": {
       "title": "vswater",
       "properties": {

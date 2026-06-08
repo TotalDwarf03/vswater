@@ -1,12 +1,34 @@
 import * as vscode from 'vscode';
+import { HydrationDashboardProvider } from './dashboard';
 
 let timer: NodeJS.Timeout | undefined;
 let statusBarItem: vscode.StatusBarItem;
+let dashboardProvider: HydrationDashboardProvider;
 
 const STATS_KEY = 'vswater.stats';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('vswater is now active!');
+
+	const stats = getStats(context);
+	const today = getTodayString();
+	const intake = stats[today] || 0;
+	const goal = vscode.workspace.getConfiguration('vswater').get<number>('dailyGoal') || 2000;
+
+	// Initialize dashboard provider
+	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal);
+	
+	// Register the sidebar view provider
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(HydrationDashboardProvider.viewType, dashboardProvider)
+	);
+
+	// Handle messages from the webview
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vswater.dashboard.logIntake', () => {
+			vscode.commands.executeCommand('vswater.logIntake');
+		})
+	);
 
 	// Register commands
 	context.subscriptions.push(
@@ -25,6 +47,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.logIntake', async () => {
+			// Ensure sidebar is visible
+			await vscode.commands.executeCommand('vswater.dashboard.focus');
+
 			const options = ['250ml', '500ml', '750ml', 'Custom...'];
 			const selected = await vscode.window.showQuickPick(options, {
 				placeHolder: 'How much water did you drink?'
@@ -49,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			if (amount > 0) {
 				await addIntake(context, amount);
-				updateStatusBar(context);
+				updateUI(context);
 				vscode.window.showInformationMessage(`Logged ${amount}ml of water! 💧`);
 			}
 		})
@@ -58,7 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.resetDaily', async () => {
 			await resetDaily(context);
-			updateStatusBar(context);
+			updateUI(context);
 			vscode.window.showInformationMessage('Daily intake has been reset.');
 		})
 	);
@@ -67,12 +92,12 @@ export function activate(context: vscode.ExtensionContext) {
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBarItem.command = 'vswater.logIntake';
 	statusBarItem.color = new vscode.ThemeColor('charts.blue');
-	statusBarItem.tooltip = 'vswater: Click to log water intake';
+	statusBarItem.tooltip = 'vswater: Click to log water intake and open dashboard';
 	statusBarItem.show();
 	context.subscriptions.push(statusBarItem);
 
-	// Initial status bar update
-	updateStatusBar(context);
+	// Initial UI update
+	updateUI(context);
 
 	// Start timer on activation
 	startTimer();
@@ -84,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
 				startTimer();
 			}
 			if (e.affectsConfiguration('vswater.dailyGoal')) {
-				updateStatusBar(context);
+				updateUI(context);
 			}
 		})
 	);
@@ -132,13 +157,19 @@ function getStats(context: vscode.ExtensionContext): Record<string, number> {
 	return context.globalState.get<Record<string, number>>(STATS_KEY) || {};
 }
 
-function updateStatusBar(context: vscode.ExtensionContext) {
+function updateUI(context: vscode.ExtensionContext) {
 	const stats = getStats(context);
 	const today = getTodayString();
 	const currentIntake = stats[today] || 0;
 	const goal = vscode.workspace.getConfiguration('vswater').get<number>('dailyGoal') || 2000;
 
+	// Update status bar
 	statusBarItem.text = `$(beaker) ${currentIntake} / ${goal} ml`;
+
+	// Update dashboard view
+	if (dashboardProvider) {
+		dashboardProvider.updateProgress(currentIntake, goal);
+	}
 }
 
 async function addIntake(context: vscode.ExtensionContext, amount: number) {
