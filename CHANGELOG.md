@@ -20,7 +20,3 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Status bar integration showing current progress.
 - Audio notifications on macOS (reminders and logging feedback).
 - Configurable reminder messages and sounds.
-
-## [0.0.1] - 2026-05-15
-
-- Initial prototype release.
