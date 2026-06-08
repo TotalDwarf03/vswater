@@ -1,15 +1,27 @@
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+suite('vswater Extension Test Suite', () => {
+	vscode.window.showInformationMessage('Start vswater tests.');
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	test('Commands should be registered', async () => {
+		const commands = await vscode.commands.getCommands(true);
+		const vswaterCommands = [
+			'vswater.start',
+			'vswater.stop',
+			'vswater.logIntake',
+			'vswater.resetDaily'
+		];
+
+		vswaterCommands.forEach(cmd => {
+			assert.ok(commands.includes(cmd), `Command ${cmd} should be registered`);
+		});
+	});
+
+	test('Settings should be present', () => {
+		const config = vscode.workspace.getConfiguration('vswater');
+		assert.notStrictEqual(config.get('enabled'), undefined);
+		assert.notStrictEqual(config.get('interval'), undefined);
+		assert.notStrictEqual(config.get('dailyGoal'), undefined);
 	});
 });
