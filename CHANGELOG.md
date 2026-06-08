@@ -4,6 +4,11 @@ All notable changes to the "vswater" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.2] - 2026-06-08
+
+### Fixed
+- Added safeguard to deployment action to prevent unintended deployments, ensuring that the package version is correctly set before release.
+
 ## [1.2.1] - 2026-06-08
 
 ### Fixed
