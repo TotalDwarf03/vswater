@@ -181,6 +181,11 @@ function scheduleNextReminder(ms?: number, snoozed: boolean = false) {
 	const delay = ms || (intervalMinutes * 60 * 1000);
 
 	isSnoozed = snoozed;
+
+	if (extensionContext) {
+		await extensionContext.globalState.update(LAST_NOTIFICATION_KEY, Date.now());
+	}
+	
 	nextReminderTime = Date.now() + delay;
 	reminderTimer = setTimeout(() => {
 		showReminder();
