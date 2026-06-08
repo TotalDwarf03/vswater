@@ -9,6 +9,7 @@ let dashboardProvider: HydrationDashboardProvider;
 let extensionContext: vscode.ExtensionContext;
 
 const STATS_KEY = 'vswater.stats';
+const LAST_NOTIFICATION_KEY = 'vswater.lastNotification';
 
 export function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
@@ -105,8 +106,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// Initial UI update
 	updateUI(context);
 
-	// Start timer on activation
-	scheduleNextReminder();
+	// Start timer on activation, accounting for time elapsed since last notification
+	scheduleNextReminderFromLastNotification();
 
 	// Listen for configuration changes
 	context.subscriptions.push(
@@ -130,6 +131,33 @@ function playSound(defaultSound: string = 'Bottle') {
 		const soundName = config.get<string>('soundName') || defaultSound;
 		const soundPath = `/System/Library/Sounds/${soundName}.aiff`;
 		exec(`afplay "${soundPath}"`);
+	}
+}
+
+function scheduleNextReminderFromLastNotification() {
+	const config = vscode.workspace.getConfiguration('vswater');
+	const enabled = config.get<boolean>('enabled');
+
+	if (!enabled) {
+		return;
+	}
+
+	const intervalMinutes = config.get<number>('interval') || 60;
+	const intervalMs = intervalMinutes * 60 * 1000;
+	const lastNotification = extensionContext?.globalState.get<number>(LAST_NOTIFICATION_KEY);
+
+	if (lastNotification) {
+		const elapsed = Date.now() - lastNotification;
+		const remaining = intervalMs - elapsed;
+
+		if (remaining <= 0) {
+			// Interval has already passed — notify after a brief delay to let VS Code settle
+			scheduleNextReminder(3000);
+		} else {
+			scheduleNextReminder(remaining);
+		}
+	} else {
+		scheduleNextReminder();
 	}
 }
 
@@ -159,6 +187,10 @@ function scheduleNextReminder(ms?: number) {
 }
 
 async function showReminder() {
+	if (extensionContext) {
+		await extensionContext.globalState.update(LAST_NOTIFICATION_KEY, Date.now());
+	}
+
 	const config = vscode.workspace.getConfiguration('vswater');
 	const messageSetting = config.get<string>('reminderMessage') || 'Time to drink some water! 💧';
 	
