@@ -4,6 +4,11 @@ All notable changes to the "vswater" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.1] - 2026-06-08
+
+### Fixed
+- Logging intake now updates the last notification time, ensuring notification timing remains consistent across IDE restarts.
+
 ## [1.2.0] - 2026-06-08
 
 ### Added
