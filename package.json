@@ -111,6 +111,10 @@
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "overrides": {
+    "diff": "^9.0.0",
+    "serialize-javascript": "^7.0.5"
+  },
   "devDependencies": {
     "@types/vscode": "^1.120.0",
     "@types/mocha": "^10.0.10",
