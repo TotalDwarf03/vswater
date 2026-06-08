@@ -17,6 +17,7 @@ Stay healthy and hydrated while you code. **vswater** is a VS Code extension tha
     - [Setup](#setup)
     - [Running the Extension Locally](#running-the-extension-locally)
     - [Running Tests](#running-tests)
+  - [Releasing](#releasing)
   - [Release Notes](#release-notes)
     - [0.0.1](#001)
 
