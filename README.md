@@ -2,7 +2,7 @@
 
 Stay healthy and hydrated while you code. **vswater** is a VS Code extension that reminds you to drink water and tracks your daily intake directly in your sidebar.
 
-> This extension was created to trail Google Gemini Code Assist and the Gemini CLI. It is not intended for production use and may contain bugs or incomplete features. Use at your own risk!
+> This extension was created to trial Google Gemini Code Assist and the Gemini CLI. It is not intended for production use and may contain bugs or incomplete features. Use at your own risk!
 
 ## Contents
 
