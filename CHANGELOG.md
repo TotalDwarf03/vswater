@@ -4,9 +4,9 @@ All notable changes to the "vswater" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [0.0.1]
+## [1.0.0] - 2026-06-08
 
-- Initial release of vswater.
+### Added
 - Core hydration reminder loop with customizable intervals.
 - Snooze functionality (10m and 20m).
 - Intake logging and persistent daily stats.
@@ -15,3 +15,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Status bar integration showing current progress.
 - Audio notifications on macOS (reminders and logging feedback).
 - Configurable reminder messages and sounds.
+
+## [0.0.1] - 2026-05-15
+
+- Initial prototype release.
