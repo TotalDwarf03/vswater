@@ -9,15 +9,46 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vswater.helloWorld",
-        "title": "Hello World"
+        "command": "vswater.start",
+        "title": "vswater: Start Hydration Reminders"
+      },
+      {
+        "command": "vswater.stop",
+        "title": "vswater: Stop Hydration Reminders"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "vswater",
+      "properties": {
+        "vswater.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable hydration reminders."
+        },
+        "vswater.interval": {
+          "type": "number",
+          "default": 60,
+          "description": "Time between hydration reminders (in minutes)."
+        },
+        "vswater.dailyGoal": {
+          "type": "number",
+          "default": 2000,
+          "description": "Daily hydration goal (in ml)."
+        },
+        "vswater.reminderMessage": {
+          "type": "string",
+          "default": "Time to drink some water! 💧",
+          "description": "The message shown in the hydration reminder."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
