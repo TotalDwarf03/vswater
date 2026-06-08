@@ -2,9 +2,23 @@
 
 Stay healthy and hydrated while you code. **vswater** is a VS Code extension that reminds you to drink water and tracks your daily intake directly in your sidebar.
 
-## Disclaimer
+> This extension was created to trail Google Gemini Code Assist and the Gemini CLI. It is not intended for production use and may contain bugs or incomplete features. Use at your own risk!
 
-This extension was created to trail Google Gemini Code Assist and the Gemini CLI. It is not intended for production use and may contain bugs or incomplete features. Use at your own risk!
+## Contents
+
+- [vswater 💧](#vswater-)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Usage](#usage)
+  - [Settings](#settings)
+  - [Installation (from GitHub Release)](#installation-from-github-release)
+  - [Development](#development)
+    - [Prerequisites](#prerequisites)
+    - [Setup](#setup)
+    - [Running the Extension Locally](#running-the-extension-locally)
+    - [Running Tests](#running-tests)
+  - [Release Notes](#release-notes)
+    - [0.0.1](#001)
 
 ## Features
 
@@ -33,6 +47,46 @@ This extension contributes the following settings:
 * `vswater.enableSound`: Play a sound for reminders (macOS only).
 * `vswater.enableLogSound`: Play a sound when logging water (macOS only).
 * `vswater.soundName`: Choose your preferred system sound.
+
+## Installation (from GitHub Release)
+
+1.  Download the latest `.vsix` file from the [Releases](https://github.com/TotalDwarf03/vswater/releases) page.
+2.  Open VS Code.
+3.  Open the **Extensions** view (`Cmd+Shift+X` or `Ctrl+Shift+X`).
+4.  Click the **`...`** (More Actions) menu in the top right.
+5.  Select **Install from VSIX...** and choose the file you downloaded.
+
+## Development
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [npm](https://www.npmjs.com/)
+
+### Setup
+1. Clone the repository.
+2. Run `npm install` to install dependencies.
+
+### Running the Extension Locally
+1. Open the project folder in VS Code.
+2. Press **`F5`** to launch the "Extension Development Host" window.
+3. In the new window, use the command palette (`Cmd+Shift+P`) and type `vswater: Start` to test the extension.
+
+### Running Tests
+- Use the **Testing** view in the sidebar to run all tests.
+- Alternatively, run `npm test` from the terminal.
+
+## Releasing
+
+To create a new release and generate a `.vsix` file automatically:
+
+1. Update the version in `package.json`.
+2. Commit and push your changes.
+3. Create and push a new git tag:
+   ```bash
+   git tag v0.0.1
+   git push origin v0.0.1
+   ```
+4. The GitHub Action will automatically package the extension and create a new release on the GitHub repository.
 
 ## Release Notes
 

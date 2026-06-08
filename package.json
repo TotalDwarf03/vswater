@@ -1,8 +1,13 @@
 {
   "name": "vswater",
   "displayName": "vswater",
-  "description": "",
-  "version": "0.0.1",
+  "description": "A VS Code extension that reminds you to drink water and tracks your daily intake directly in your sidebar.",
+  "version": "1.0.0",
+  "publisher": "TotalDwarf03",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TotalDwarf03/vswater.git"
+  },
   "engines": {
     "vscode": "^1.120.0"
   },
