@@ -4,6 +4,14 @@ All notable changes to the "vswater" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.0] - 2026-06-08
+
+### Added
+- Refresh functionality to the Hydration Dashboard, keeping intake data up to date without reloading.
+
+### Fixed
+- Reminder scheduling now accounts for the last notification time, persisting timer state correctly across VS Code sessions.
+
 ## [1.1.0] - 2026-06-08
 
 ### Added
