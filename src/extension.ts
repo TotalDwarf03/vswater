@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 
 let reminderTimer: NodeJS.Timeout | undefined;
 let nextReminderTime: number | undefined;
+let isSnoozed: boolean = false;
 let statusBarItem: vscode.StatusBarItem;
 let dashboardProvider: HydrationDashboardProvider;
 let extensionContext: vscode.ExtensionContext;
@@ -21,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const goal = vscode.workspace.getConfiguration('vswater').get<number>('dailyGoal') || 2000;
 
 	// Initialize dashboard provider
-	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal, stats, nextReminderTime);
+	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal, stats, nextReminderTime, isSnoozed);
 	
 	// Register the sidebar view provider
 	context.subscriptions.push(
@@ -47,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.stop', () => {
-			stopTimer();
+			stopTimer(true);
 			vscode.window.showInformationMessage('Hydration reminders stopped.');
 		})
 	);
@@ -80,9 +81,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 			if (amount > 0) {
 				await addIntake(context, amount);
-				updateUI(context);
 				playSound('Tink'); // Use Tink for logging
 				vscode.window.showInformationMessage(`Logged ${amount}ml of water! 💧`);
+				// Reset the reminder timer (clears any active snooze)
+				if (nextReminderTime !== undefined) {
+					scheduleNextReminder();
+				} else {
+					updateUI(context);
+				}
 			}
 		})
 	);
@@ -161,8 +167,8 @@ function scheduleNextReminderFromLastNotification() {
 	}
 }
 
-function scheduleNextReminder(ms?: number) {
-	stopTimer();
+function scheduleNextReminder(ms?: number, snoozed: boolean = false) {
+	stopTimer(false);
 
 	const config = vscode.workspace.getConfiguration('vswater');
 	const enabled = config.get<boolean>('enabled');
@@ -174,6 +180,7 @@ function scheduleNextReminder(ms?: number) {
 	const intervalMinutes = config.get<number>('interval') || 60;
 	const delay = ms || (intervalMinutes * 60 * 1000);
 
+	isSnoozed = snoozed;
 	nextReminderTime = Date.now() + delay;
 	reminderTimer = setTimeout(() => {
 		showReminder();
@@ -210,22 +217,23 @@ async function showReminder() {
 		vscode.commands.executeCommand('vswater.logIntake');
 		scheduleNextReminder(); // Resume regular interval
 	} else if (selection === 'Snooze 10m') {
-		scheduleNextReminder(10 * 60 * 1000);
+		scheduleNextReminder(10 * 60 * 1000, true);
 	} else if (selection === 'Snooze 20m') {
-		scheduleNextReminder(20 * 60 * 1000);
+		scheduleNextReminder(20 * 60 * 1000, true);
 	} else {
 		// Just closed or ignored, still resume regular interval
 		scheduleNextReminder();
 	}
 }
 
-function stopTimer() {
+function stopTimer(updateDashboard: boolean = true) {
 	if (reminderTimer) {
 		clearTimeout(reminderTimer);
 		reminderTimer = undefined;
 	}
 	nextReminderTime = undefined;
-	if (extensionContext) {
+	isSnoozed = false;
+	if (updateDashboard && extensionContext) {
 		updateUI(extensionContext);
 	}
 }
@@ -249,7 +257,7 @@ function updateUI(context: vscode.ExtensionContext) {
 
 	// Update dashboard view
 	if (dashboardProvider) {
-		dashboardProvider.updateProgress(currentIntake, goal, stats, nextReminderTime);
+		dashboardProvider.updateProgress(currentIntake, goal, stats, nextReminderTime, isSnoozed);
 	}
 }
 
