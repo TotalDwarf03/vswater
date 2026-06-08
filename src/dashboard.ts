@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'vswater.dashboard';
     private _view?: vscode.WebviewView;
+    public onRefreshNeeded: (() => void) | undefined;
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
@@ -25,6 +26,15 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         };
 
         webviewView.webview.html = this._getHtmlForWebview(this._intake, this._goal, this._stats, this._nextReminderTime);
+
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                this.onRefreshNeeded?.();
+            }
+        });
+
+        // Refresh immediately since the view is now visible
+        this.onRefreshNeeded?.();
 
         webviewView.webview.onDidReceiveMessage(data => {
             switch (data.command) {
