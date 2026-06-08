@@ -7,10 +7,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [1.2.0] - 2026-06-08
 
 ### Added
-- Refresh functionality to the Hydration Dashboard, keeping intake data up to date without reloading.
+- Manual refresh option to the Hydration Dashboard for manually updating intake data.
+- Snooze functionality to hydration reminders with customizable snooze intervals.
 
 ### Fixed
 - Reminder scheduling now accounts for the last notification time, persisting timer state correctly across VS Code sessions.
+- Dashboard hydration refresh bugfix to ensure data consistency.
+- npm audit vulnerabilities resolved with updated package versions and dependency overrides.
 
 ## [1.1.0] - 2026-06-08
 
