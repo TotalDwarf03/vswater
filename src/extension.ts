@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { HydrationDashboardProvider } from './dashboard';
+import { exec } from 'child_process';
 
-let timer: NodeJS.Timeout | undefined;
+let reminderTimer: NodeJS.Timeout | undefined;
 let statusBarItem: vscode.StatusBarItem;
 let dashboardProvider: HydrationDashboardProvider;
 
@@ -16,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const goal = vscode.workspace.getConfiguration('vswater').get<number>('dailyGoal') || 2000;
 
 	// Initialize dashboard provider
-	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal);
+	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal, stats);
 	
 	// Register the sidebar view provider
 	context.subscriptions.push(
@@ -33,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.start', () => {
-			startTimer();
+			scheduleNextReminder();
 			vscode.window.showInformationMessage('Hydration reminders started.');
 		})
 	);
@@ -47,7 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.logIntake', async () => {
-			// Ensure sidebar is visible
 			await vscode.commands.executeCommand('vswater.dashboard.focus');
 
 			const options = ['250ml', '500ml', '750ml', 'Custom...'];
@@ -75,6 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (amount > 0) {
 				await addIntake(context, amount);
 				updateUI(context);
+				playSound('Tink'); // Use Tink for logging
 				vscode.window.showInformationMessage(`Logged ${amount}ml of water! 💧`);
 			}
 		})
@@ -100,13 +101,13 @@ export function activate(context: vscode.ExtensionContext) {
 	updateUI(context);
 
 	// Start timer on activation
-	startTimer();
+	scheduleNextReminder();
 
 	// Listen for configuration changes
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('vswater.interval') || e.affectsConfiguration('vswater.enabled')) {
-				startTimer();
+				scheduleNextReminder();
 			}
 			if (e.affectsConfiguration('vswater.dailyGoal')) {
 				updateUI(context);
@@ -115,37 +116,71 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-function startTimer() {
+function playSound(defaultSound: string = 'Bottle') {
+	const config = vscode.workspace.getConfiguration('vswater');
+	const settingName = defaultSound === 'Tink' ? 'enableLogSound' : 'enableSound';
+	const enabled = config.get<boolean>(settingName);
+
+	if (process.platform === 'darwin' && enabled) {
+		const soundName = config.get<string>('soundName') || defaultSound;
+		const soundPath = `/System/Library/Sounds/${soundName}.aiff`;
+		exec(`afplay "${soundPath}"`);
+	}
+}
+
+function scheduleNextReminder(ms?: number) {
 	stopTimer();
 
 	const config = vscode.workspace.getConfiguration('vswater');
 	const enabled = config.get<boolean>('enabled');
 	
 	if (!enabled) {
-		console.log('Hydration reminders are disabled in settings.');
 		return;
 	}
 
 	const intervalMinutes = config.get<number>('interval') || 60;
-	const intervalMs = intervalMinutes * 60 * 1000;
+	const delay = ms || (intervalMinutes * 60 * 1000);
 
-	timer = setInterval(() => {
-		const message = config.get<string>('reminderMessage') || 'Time to drink some water! 💧';
-		vscode.window.showInformationMessage(message, 'I drank water!').then(selection => {
-			if (selection === 'I drank water!') {
-				vscode.commands.executeCommand('vswater.logIntake');
-			}
-		});
-	}, intervalMs);
+	reminderTimer = setTimeout(() => {
+		showReminder();
+	}, delay);
 
-	console.log(`Hydration timer started with ${intervalMinutes} minute interval.`);
+	console.log(`Next hydration reminder scheduled in ${delay / 60000} minutes.`);
+}
+
+async function showReminder() {
+	const config = vscode.workspace.getConfiguration('vswater');
+	const messageSetting = config.get<string>('reminderMessage') || 'Time to drink some water! 💧';
+	
+	const messages = messageSetting.split(';').map(m => m.trim()).filter(m => m.length > 0);
+	const message = messages[Math.floor(Math.random() * messages.length)];
+	
+	playSound(); // Play reminder sound
+
+	const selection = await vscode.window.showInformationMessage(
+		message, 
+		'I drank water!', 
+		'Snooze 10m', 
+		'Snooze 20m'
+	);
+
+	if (selection === 'I drank water!') {
+		vscode.commands.executeCommand('vswater.logIntake');
+		scheduleNextReminder(); // Resume regular interval
+	} else if (selection === 'Snooze 10m') {
+		scheduleNextReminder(10 * 60 * 1000);
+	} else if (selection === 'Snooze 20m') {
+		scheduleNextReminder(20 * 60 * 1000);
+	} else {
+		// Just closed or ignored, still resume regular interval
+		scheduleNextReminder();
+	}
 }
 
 function stopTimer() {
-	if (timer) {
-		clearInterval(timer);
-		timer = undefined;
-		console.log('Hydration timer stopped.');
+	if (reminderTimer) {
+		clearTimeout(reminderTimer);
+		reminderTimer = undefined;
 	}
 }
 
@@ -168,7 +203,7 @@ function updateUI(context: vscode.ExtensionContext) {
 
 	// Update dashboard view
 	if (dashboardProvider) {
-		dashboardProvider.updateProgress(currentIntake, goal);
+		dashboardProvider.updateProgress(currentIntake, goal, stats);
 	}
 }
 

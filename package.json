@@ -71,7 +71,29 @@
         "vswater.reminderMessage": {
           "type": "string",
           "default": "Time to drink some water! 💧",
-          "description": "The message shown in the hydration reminder."
+          "description": "The message(s) shown in the hydration reminder. Use semicolons to separate multiple random messages."
+        },
+        "vswater.enableSound": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play a sound when a hydration reminder appears (macOS only)."
+        },
+        "vswater.enableLogSound": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play a sound when water is logged (macOS only)."
+        },
+        "vswater.soundName": {
+          "type": "string",
+          "default": "Bottle",
+          "enum": [
+            "Bottle",
+            "Glass",
+            "Pop",
+            "Tink",
+            "Submarine"
+          ],
+          "description": "The system sound to play (macOS only)."
         }
       }
     }
