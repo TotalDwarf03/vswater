@@ -22,6 +22,14 @@
       {
         "command": "vswater.stop",
         "title": "vswater: Stop Hydration Reminders"
+      },
+      {
+        "command": "vswater.logIntake",
+        "title": "vswater: Log Water Intake"
+      },
+      {
+        "command": "vswater.resetDaily",
+        "title": "vswater: Reset Daily Intake"
       }
     ],
     "configuration": {
