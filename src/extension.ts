@@ -27,6 +27,8 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.registerWebviewViewProvider(HydrationDashboardProvider.viewType, dashboardProvider)
 	);
 
+	dashboardProvider.onRefreshNeeded = () => updateUI(context);
+
 	// Handle messages from the webview
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vswater.dashboard.logIntake', () => {
