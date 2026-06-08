@@ -19,8 +19,6 @@ Stay healthy and hydrated while you code. **vswater** is a VS Code extension tha
     - [Running Tests](#running-tests)
   - [Releasing](#releasing)
   - [Release Notes](#release-notes)
-    - [1.0.0](#100)
-    - [1.0.0 -\> 0.0.1](#100---001)
 
 ## Features
 
@@ -92,19 +90,7 @@ To create a new release and generate a `.vsix` file automatically:
 
 ## Release Notes
 
-### 1.0.0
-
-Official 1.0.0 release!
-- Core reminder loop and notification system.
-- Intake logging and persistent storage.
-- Sidebar dashboard with 'filling glass' SVG graphic.
-- 7-day hydration history view.
-- macOS sound support.
-- Snooze functionality and custom reminder messages.
-
-### 1.0.0 -> 0.0.1
-
-Initial prototype and test releases.
+See the [CHANGELOG](CHANGELOG.md) for detailed release notes.
 
 ---
 
