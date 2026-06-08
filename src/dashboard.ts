@@ -8,7 +8,8 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         private readonly _extensionUri: vscode.Uri,
         private _intake: number,
         private _goal: number,
-        private _stats: Record<string, number>
+        private _stats: Record<string, number>,
+        private _nextReminderTime?: number
     ) {}
 
     public resolveWebviewView(
@@ -23,7 +24,7 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [this._extensionUri]
         };
 
-        webviewView.webview.html = this._getHtmlForWebview(this._intake, this._goal, this._stats);
+        webviewView.webview.html = this._getHtmlForWebview(this._intake, this._goal, this._stats, this._nextReminderTime);
 
         webviewView.webview.onDidReceiveMessage(data => {
             switch (data.command) {
@@ -34,16 +35,17 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    public updateProgress(intake: number, goal: number, stats: Record<string, number>) {
+    public updateProgress(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number) {
         this._intake = intake;
         this._goal = goal;
         this._stats = stats;
+        this._nextReminderTime = nextReminderTime;
         if (this._view) {
-            this._view.webview.postMessage({ type: 'update', intake, goal, stats });
+            this._view.webview.postMessage({ type: 'update', intake, goal, stats, nextReminderTime });
         }
     }
 
-    private _getHtmlForWebview(intake: number, goal: number, stats: Record<string, number>) {
+    private _getHtmlForWebview(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number) {
         const percentage = Math.min(Math.round((intake / goal) * 100), 100);
 
         return `<!DOCTYPE html>
@@ -94,6 +96,12 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         .volume {
             font-size: 14px;
             opacity: 0.8;
+        }
+        .reminder {
+            margin-top: 10px;
+            font-size: 13px;
+            opacity: 0.7;
+            color: var(--vscode-sideBar-foreground);
         }
         .btn-log {
             margin-top: 20px;
@@ -156,6 +164,7 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
     <div class="stats">
         <div class="percentage" id="percentText">${percentage}%</div>
         <div class="volume" id="volumeText">${intake}ml / ${goal}ml</div>
+        <div class="reminder" id="reminderText">Next reminder: --:--</div>
     </div>
     <button class="btn-log" onclick="logWater()">Log Water</button>
 
@@ -168,13 +177,18 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
 
     <script>
         const vscode = acquireVsCodeApi();
+        let nextReminderTime = ${nextReminderTime || 'null'};
+
         function logWater() {
             vscode.postMessage({ command: 'logIntake' });
         }
+
         window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'update') {
-                const { intake, goal, stats } = message;
+                const { intake, goal, stats, nextReminderTime: nextTime } = message;
+                nextReminderTime = nextTime;
+                
                 const percentage = Math.min(Math.round((intake / goal) * 100), 100);
                 
                 const waterRect = document.getElementById('waterRect');
@@ -190,11 +204,35 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
                 percentText.innerText = percentage + '%';
                 volumeText.innerText = intake + 'ml / ' + goal + 'ml';
                 
-                // Update history (regenerate HTML for simplicity)
-                // In a real app we'd manipulate the DOM more surgically
+                // Update history
                 historyList.innerHTML = getHistoryHtml(stats, goal);
+                
+                updateCountdown();
             }
         });
+
+        function updateCountdown() {
+            const reminderText = document.getElementById('reminderText');
+            if (!nextReminderTime) {
+                reminderText.innerText = 'Reminders stopped';
+                return;
+            }
+
+            const now = Date.now();
+            const diff = nextReminderTime - now;
+
+            if (diff <= 0) {
+                reminderText.innerText = 'Reminding now...';
+                return;
+            }
+
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            reminderText.innerText = \`Next reminder in \${minutes}:\${seconds.toString().padStart(2, '0')}\`;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
 
         function getHistoryHtml(stats, goal) {
             let html = '';

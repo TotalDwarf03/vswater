@@ -3,12 +3,15 @@ import { HydrationDashboardProvider } from './dashboard';
 import { exec } from 'child_process';
 
 let reminderTimer: NodeJS.Timeout | undefined;
+let nextReminderTime: number | undefined;
 let statusBarItem: vscode.StatusBarItem;
 let dashboardProvider: HydrationDashboardProvider;
+let extensionContext: vscode.ExtensionContext;
 
 const STATS_KEY = 'vswater.stats';
 
 export function activate(context: vscode.ExtensionContext) {
+	extensionContext = context;
 	console.log('vswater is now active!');
 
 	const stats = getStats(context);
@@ -17,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const goal = vscode.workspace.getConfiguration('vswater').get<number>('dailyGoal') || 2000;
 
 	// Initialize dashboard provider
-	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal, stats);
+	dashboardProvider = new HydrationDashboardProvider(context.extensionUri, intake, goal, stats, nextReminderTime);
 	
 	// Register the sidebar view provider
 	context.subscriptions.push(
@@ -141,9 +144,14 @@ function scheduleNextReminder(ms?: number) {
 	const intervalMinutes = config.get<number>('interval') || 60;
 	const delay = ms || (intervalMinutes * 60 * 1000);
 
+	nextReminderTime = Date.now() + delay;
 	reminderTimer = setTimeout(() => {
 		showReminder();
 	}, delay);
+
+	if (extensionContext) {
+		updateUI(extensionContext);
+	}
 
 	console.log(`Next hydration reminder scheduled in ${delay / 60000} minutes.`);
 }
@@ -182,6 +190,10 @@ function stopTimer() {
 		clearTimeout(reminderTimer);
 		reminderTimer = undefined;
 	}
+	nextReminderTime = undefined;
+	if (extensionContext) {
+		updateUI(extensionContext);
+	}
 }
 
 function getTodayString() {
@@ -203,7 +215,7 @@ function updateUI(context: vscode.ExtensionContext) {
 
 	// Update dashboard view
 	if (dashboardProvider) {
-		dashboardProvider.updateProgress(currentIntake, goal, stats);
+		dashboardProvider.updateProgress(currentIntake, goal, stats, nextReminderTime);
 	}
 }
 
