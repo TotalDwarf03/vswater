@@ -183,7 +183,7 @@ function scheduleNextReminder(ms?: number, snoozed: boolean = false) {
 	isSnoozed = snoozed;
 
 	if (extensionContext) {
-		await extensionContext.globalState.update(LAST_NOTIFICATION_KEY, Date.now());
+		extensionContext.globalState.update(LAST_NOTIFICATION_KEY, Date.now());
 	}
 	
 	nextReminderTime = Date.now() + delay;
