@@ -29,6 +29,7 @@ Stay healthy and hydrated while you code. **vswater** is a VS Code extension tha
 - **Status Bar Integration:** Real-time progress display in the status bar (`💧 500 / 2000 ml`).
 - **Sound Feedback (macOS):** Satisfying "Bottle" and "Tink" sounds for reminders and logging.
 - **Customizable Messages:** Set multiple reminder messages to keep things fresh.
+- **Dashboard Refresh:** Manually refresh the Hydration Dashboard to keep intake data up to date.
 
 ## Usage
 
