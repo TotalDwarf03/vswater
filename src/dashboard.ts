@@ -10,7 +10,8 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         private _intake: number,
         private _goal: number,
         private _stats: Record<string, number>,
-        private _nextReminderTime?: number
+        private _nextReminderTime?: number,
+        private _isSnoozed: boolean = false
     ) {}
 
     public resolveWebviewView(
@@ -25,7 +26,7 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [this._extensionUri]
         };
 
-        webviewView.webview.html = this._getHtmlForWebview(this._intake, this._goal, this._stats, this._nextReminderTime);
+        webviewView.webview.html = this._getHtmlForWebview(this._intake, this._goal, this._stats, this._nextReminderTime, this._isSnoozed);
 
         webviewView.onDidChangeVisibility(() => {
             if (webviewView.visible) {
@@ -45,17 +46,18 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    public updateProgress(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number) {
+    public updateProgress(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number, isSnoozed: boolean = false) {
         this._intake = intake;
         this._goal = goal;
         this._stats = stats;
         this._nextReminderTime = nextReminderTime;
+        this._isSnoozed = isSnoozed;
         if (this._view) {
-            this._view.webview.postMessage({ type: 'update', intake, goal, stats, nextReminderTime });
+            this._view.webview.postMessage({ type: 'update', intake, goal, stats, nextReminderTime, isSnoozed });
         }
     }
 
-    private _getHtmlForWebview(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number) {
+    private _getHtmlForWebview(intake: number, goal: number, stats: Record<string, number>, nextReminderTime?: number, isSnoozed: boolean = false) {
         const percentage = Math.min(Math.round((intake / goal) * 100), 100);
 
         return `<!DOCTYPE html>
@@ -112,6 +114,21 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
             font-size: 13px;
             opacity: 0.7;
             color: var(--vscode-sideBar-foreground);
+        }
+        .reminder.snoozed {
+            opacity: 1;
+            color: #e67e22;
+        }
+        .snooze-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: bold;
+            background-color: #e67e22;
+            color: white;
+            border-radius: 3px;
+            padding: 1px 5px;
+            margin-right: 4px;
+            vertical-align: middle;
         }
         .btn-log {
             margin-top: 20px;
@@ -188,6 +205,7 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
     <script>
         const vscode = acquireVsCodeApi();
         let nextReminderTime = ${nextReminderTime || 'null'};
+        let isSnoozed = ${isSnoozed};
 
         function logWater() {
             vscode.postMessage({ command: 'logIntake' });
@@ -196,8 +214,9 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'update') {
-                const { intake, goal, stats, nextReminderTime: nextTime } = message;
+                const { intake, goal, stats, nextReminderTime: nextTime, isSnoozed: snoozed } = message;
                 nextReminderTime = nextTime;
+                isSnoozed = snoozed;
                 
                 const percentage = Math.min(Math.round((intake / goal) * 100), 100);
                 
@@ -222,9 +241,10 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
         });
 
         function updateCountdown() {
-            const reminderText = document.getElementById('reminderText');
+            const reminderEl = document.getElementById('reminderText');
             if (!nextReminderTime) {
-                reminderText.innerText = 'Reminders stopped';
+                reminderEl.className = 'reminder';
+                reminderEl.innerHTML = 'Reminders stopped';
                 return;
             }
 
@@ -232,13 +252,22 @@ export class HydrationDashboardProvider implements vscode.WebviewViewProvider {
             const diff = nextReminderTime - now;
 
             if (diff <= 0) {
-                reminderText.innerText = 'Reminding now...';
+                reminderEl.className = 'reminder';
+                reminderEl.innerHTML = 'Reminding now...';
                 return;
             }
 
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            reminderText.innerText = \`Next reminder in \${minutes}:\${seconds.toString().padStart(2, '0')}\`;
+            const timeStr = \`\${minutes}:\${seconds.toString().padStart(2, '0')}\`;
+
+            if (isSnoozed) {
+                reminderEl.className = 'reminder snoozed';
+                reminderEl.innerHTML = \`<span class="snooze-badge">SNOOZED</span>Next reminder in \${timeStr}\`;
+            } else {
+                reminderEl.className = 'reminder';
+                reminderEl.innerHTML = \`Next reminder in \${timeStr}\`;
+            }
         }
 
         setInterval(updateCountdown, 1000);
